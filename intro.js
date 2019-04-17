@@ -394,6 +394,14 @@
     }
   }
 
+  function getFunctionArguments(fn) {
+    var str = fn.toString();
+    var args = /\(\s*([^)]+?)\s*\)/.exec(str);
+    if (args[1]) {
+      return args[1].split(/\s*,\s*/);
+    }
+  }
+  
   /**
    * Go to next step on intro
    *
@@ -421,8 +429,22 @@
     var nextStep = this._introItems[this._currentStep];
     var continueStep = true;
 
+    var done = function() {
+      if ((this._introItems.length) <= this._currentStep) {
+        //end of the intro
+        //check if any callback is defined
+        if (typeof (this._introCompleteCallback) === 'function') {
+          this._introCompleteCallback.call(this);
+        }
+        _exitIntro.call(this, this._targetElement);
+        return;
+      }
+
+      _showElement.call(this, nextStep);
+    }.bind(this);
+    
     if (typeof (this._introBeforeChangeCallback) !== 'undefined') {
-      continueStep = this._introBeforeChangeCallback.call(this, nextStep.element);
+      continueStep = this._introBeforeChangeCallback.call(this, nextStep.element, done);
     }
 
     // if `onbeforechange` returned `false`, stop displaying the element
@@ -441,7 +463,9 @@
       return;
     }
 
-    _showElement.call(this, nextStep);
+    if (getFunctionArguments(this._introBeforeChangeCallback).indexOf('done') === -1) {
+      done();
+    }
   }
 
   /**
@@ -461,9 +485,12 @@
 
     var nextStep = this._introItems[this._currentStep];
     var continueStep = true;
+    var done = function () {
+      _showElement.call(this, nextStep);
+    }.bind(this);
 
     if (typeof (this._introBeforeChangeCallback) !== 'undefined') {
-      continueStep = this._introBeforeChangeCallback.call(this, nextStep.element);
+      continueStep = this._introBeforeChangeCallback.call(this, nextStep.element, done);
     }
 
     // if `onbeforechange` returned `false`, stop displaying the element
@@ -472,7 +499,9 @@
       return false;
     }
 
-    _showElement.call(this, nextStep);
+    if (getFunctionArguments(this._introBeforeChangeCallback).indexOf('done') === -1) {
+      done();
+    }
   }
 
   /**
